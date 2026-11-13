@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Времето в България</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: заглавие, лента с екстремуми, схематична карта + подробности за избрания град, мрежа от 27-те областни центъра. */
+:root {
+  --bg: #eef2f5;
+  --surface: #ffffff;
+  --ink: #14212b;
+  --muted: #566877;
+  --line: #d3dce3;
+  --accent: #0b6e8a;
+  --accent-ink: #ffffff;
+  --map-land: #e3ebf0;
+  --map-edge: #b4c3cd;
+  --sun: #e8a500;
+  --cloud: #8fa3b3;
+  --rain: #3d8fd1;
+  --snow: #6fa8dc;
+  --warn-bg: #fff4d6;
+  --warn-ink: #6b4b00;
+  --font-display: "Unbounded", "Onest", system-ui, sans-serif;
+  --font-body: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1820;
+    --surface: #14232d;
+    --ink: #e6eef3;
+    --muted: #8da1af;
+    --line: #243642;
+    --accent: #5cc3de;
+    --accent-ink: #0d1820;
+    --map-land: #1a2c38;
+    --map-edge: #34505f;
+    --sun: #ffc533;
+    --cloud: #7d93a3;
+    --rain: #5aa9e6;
+    --snow: #9cc4eb;
+    --warn-bg: #3a2f10;
+    --warn-ink: #ffd982;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1820;
+  --surface: #14232d;
+  --ink: #e6eef3;
+  --muted: #8da1af;
+  --line: #243642;
+  --accent: #5cc3de;
+  --accent-ink: #0d1820;
+  --map-land: #1a2c38;
+  --map-edge: #34505f;
+  --sun: #ffc533;
+  --cloud: #7d93a3;
+  --rain: #5aa9e6;
+  --snow: #9cc4eb;
+  --warn-bg: #3a2f10;
+  --warn-ink: #ffd982;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { color-scheme: light; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 var(--font-body);
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.shell { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.eyebrow { margin: 0 0 6px; font-size: 12px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font: 700 clamp(26px, 4.6vw, 44px)/1.08 var(--font-display); letter-spacing: -.02em; text-wrap: balance; }
+.stamp { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+.stamp b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.btn {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 8px;
+  padding: 8px 14px; cursor: pointer; font-weight: 500;
+}
+.btn:hover { border-color: var(--accent); }
+.btn[disabled] { opacity: .55; cursor: progress; }
+
+.notice { margin: 0; padding: 10px 14px; border-radius: 8px; background: var(--warn-bg); color: var(--warn-ink); font-size: 14px; }
+
+.extremes { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); border-block: 1px solid var(--line); }
+.ext { padding: 16px 18px; min-width: 0; }
+.ext + .ext { border-left: 1px solid var(--line); }
+.ext .k { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.ext .v { margin-top: 4px; font: 700 22px/1.2 var(--font-display); font-variant-numeric: tabular-nums; }
+.ext .c { color: var(--muted); font-size: 14px; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 20px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
+.panel h2 { margin: 0 0 12px; font: 500 13px/1.3 var(--font-body); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+
+.map svg { display: block; width: 100%; height: auto; }
+.map .land { fill: var(--map-land); stroke: var(--map-edge); stroke-width: 1.5; stroke-linejoin: round; }
+.dot { cursor: pointer; }
+.dot circle { stroke: var(--surface); stroke-width: 2; transition: r .15s; }
+.dot:hover circle { r: 18; }
+.dot.sel circle { stroke: var(--ink); stroke-width: 3; }
+.dot text { pointer-events: none; }
+.dot .t { font: 600 12px var(--font-body); text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+.dot .lbl { font: 500 11.5px var(--font-body); fill: var(--ink); paint-order: stroke; stroke: var(--map-land); stroke-width: 3px; stroke-linejoin: round; }
+.legend { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; max-width: 420px; }
+.legend .bar { height: 8px; border-radius: 4px; }
+.legend .ticks { position: relative; height: 16px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.legend .ticks span { position: absolute; transform: translateX(-50%); }
+.note { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+
+.detail { position: sticky; top: 16px; }
+.d-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.d-name { margin: 0; font: 700 24px/1.15 var(--font-display); letter-spacing: -.01em; }
+.d-sub { color: var(--muted); font-size: 14px; margin-top: 2px; }
+.d-temp { display: flex; align-items: center; gap: 14px; margin: 18px 0 6px; }
+.d-temp .big { font: 700 64px/1 var(--font-display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.d-temp svg { width: 64px; height: 64px; flex: none; }
+.d-feel { color: var(--muted); margin: 0 0 16px; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; margin: 0; border-top: 1px solid var(--line); }
+.facts div { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.facts div:nth-child(odd) { padding-right: 12px; }
+.facts dt { font-size: 12px; color: var(--muted); }
+.facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.days { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+.day { border: 1px solid var(--line); border-radius: 10px; padding: 10px; text-align: center; min-width: 0; }
+.day .dn { font-size: 12px; color: var(--muted); text-transform: capitalize; }
+.day svg { width: 34px; height: 34px; margin: 4px auto; display: block; }
+.day .rng { font-weight: 600; font-variant-numeric: tabular-nums; font-size: 14px; }
+.day .rng span { color: var(--muted); font-weight: 500; }
+.day .pp { font-size: 12px; color: var(--rain); font-variant-numeric: tabular-nums; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.controls h2 { margin: 0; font: 700 20px/1.2 var(--font-display); letter-spacing: -.01em; text-transform: none; color: var(--ink); }
+.ctl { display: flex; flex-wrap: wrap; gap: 8px; }
+.ctl input, .ctl select { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 12px; min-width: 0; }
+.ctl input { width: 200px; max-width: 100%; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 10px; margin-top: 14px; }
+.tile {
+  display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto auto; column-gap: 8px;
+  text-align: left; padding: 12px 14px; border: 1px solid var(--line); background: var(--surface);
+  border-radius: 12px; cursor: pointer; min-width: 0;
+}
+.tile:hover { border-color: var(--accent); }
+.tile[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.tile .nm { font-weight: 600; grid-column: 1; overflow-wrap: anywhere; }
+.tile svg { grid-column: 2; grid-row: 1 / span 2; width: 34px; height: 34px; }
+.tile .tp { display: flex; align-items: center; gap: 8px; font: 700 22px/1.2 var(--font-display); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.tile .sw { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.tile .ds { grid-column: 1 / -1; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.empty { grid-column: 1 / -1; color: var(--muted); padding: 12px 0; }
+.skeleton .tp { color: var(--muted); }
+
+footer { color: var(--muted); font-size: 12.5px; }
+footer a { color: var(--accent); }
+
+@media (max-width: 900px) {
+  .main { grid-template-columns: minmax(0, 1fr); }
+  .detail { position: static; }
+}
+@media (max-width: 720px) {
+  .map { display: none; }
+  .ext + .ext { border-left: 0; border-top: 1px solid var(--line); }
+  .d-temp .big { font-size: 54px; }
+}
+@media (prefers-reduced-motion: reduce) { .dot circle { transition: none; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div>
+      <p class="eyebrow">27 областни центъра · данни от Open-Meteo</p>
+      <h1>Времето в България</h1>
+    </div>
+    <div class="stamp">
+      <span id="stamp">Зареждане…</span>
+      <button class="btn" id="refresh" type="button">Обнови</button>
+    </div>
+  </header>
+
+  <p class="notice" id="notice" hidden></p>
+
+  <section class="extremes" id="extremes" aria-label="Екстремуми днес"></section>
+
+  <section class="main">
+    <div class="panel map">
+      <h2>Температура по градове</h2>
+      <div id="map"></div>
+      <div class="legend" aria-hidden="true">
+        <div class="bar" id="legbar"></div>
+        <div class="ticks" id="legticks"></div>
+      </div>
+      <p class="note">Схематична карта. Контурът е приблизителен, а точките стоят на истинските координати на градовете.</p>
+    </div>
+    <aside class="panel detail" id="detail" aria-live="polite"></aside>
+  </section>
+
+  <section>
+    <div class="controls">
+      <h2>Всички областни центрове</h2>
+      <div class="ctl">
+        <input id="q" type="search" placeholder="Търси град" aria-label="Търси град" autocomplete="off">
+        <select id="sort" aria-label="Подредба">
+          <option value="az">По азбучен ред</option>
+          <option value="warm">Най-топло първо</option>
+          <option value="cold">Най-студено първо</option>
+          <option value="wind">Най-силен вятър първо</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <footer>
+    Градовете са областните центрове. София е център на две области: София-град и Софийска област.
+    Данни: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>. Времето се обновява на всеки 15 минути.
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // lbl: къде да стои етикетът на картата (b=отдолу, l=вляво, r=вдясно, t=отгоре)
+  var CITIES = [
+    { n: "Благоевград", lat: 42.0117, lon: 23.0943 },
+    { n: "Бургас", lat: 42.5048, lon: 27.4626 },
+    { n: "Варна", lat: 43.2141, lon: 27.9147 },
+    { n: "Велико Търново", lat: 43.0757, lon: 25.6172, lbl: "t" },
+    { n: "Видин", lat: 43.9962, lon: 22.8679 },
+    { n: "Враца", lat: 43.2102, lon: 23.5529 },
+    { n: "Габрово", lat: 42.8742, lon: 25.3187, lbl: "l" },
+    { n: "Добрич", lat: 43.5726, lon: 27.8273 },
+    { n: "Кърджали", lat: 41.6338, lon: 25.3777 },
+    { n: "Кюстендил", lat: 42.2839, lon: 22.6911 },
+    { n: "Ловеч", lat: 43.137, lon: 24.714 },
+    { n: "Монтана", lat: 43.4125, lon: 23.225 },
+    { n: "Пазарджик", lat: 42.1928, lon: 24.3336, lbl: "l" },
+    { n: "Перник", lat: 42.6052, lon: 23.0378, lbl: "l" },
+    { n: "Плевен", lat: 43.417, lon: 24.6067 },
+    { n: "Пловдив", lat: 42.1354, lon: 24.7453, lbl: "r" },
+    { n: "Разград", lat: 43.5333, lon: 26.5167, lbl: "t" },
+    { n: "Русе", lat: 43.8356, lon: 25.9657 },
+    { n: "Силистра", lat: 44.1167, lon: 27.2667, lbl: "l" },
+    { n: "Сливен", lat: 42.6817, lon: 26.3229, lbl: "t" },
+    { n: "Смолян", lat: 41.5774, lon: 24.7011 },
+    { n: "София", lat: 42.6977, lon: 23.3219, lbl: "r" },
+    { n: "Стара Загора", lat: 42.4258, lon: 25.6345 },
+    { n: "Търговище", lat: 43.25, lon: 26.5667, lbl: "l" },
+    { n: "Хасково", lat: 41.9344, lon: 25.5554 },
+    { n: "Шумен", lat: 43.2706, lon: 26.9361, lbl: "r" },
+    { n: "Ямбол", lat: 42.4842, lon: 26.5035 }
+  ];
+
+  // Приблизителен контур на България [lon, lat]
+  var OUTLINE = [
+    [22.68,44.22],[22.87,44.05],[23.10,43.88],[23.50,43.78],[24.00,43.69],[24.60,43.70],[25.00,43.68],
+    [25.45,43.62],[25.95,43.84],[26.30,44.00],[26.80,44.05],[27.27,44.13],[27.60,44.02],[27.90,43.98],
+    [28.30,43.83],[28.58,43.74],[28.55,43.60],[28.45,43.37],[28.17,43.40],[27.92,43.18],[27.90,42.95],
+    [27.90,42.70],[27.72,42.62],[27.50,42.50],[27.70,42.42],[27.85,42.15],[28.03,41.98],[27.55,41.93],
+    [27.25,42.05],[26.85,41.80],[26.35,41.72],[26.15,41.50],[26.05,41.35],[25.55,41.32],[25.20,41.32],
+    [24.85,41.33],[24.60,41.55],[24.50,41.45],[24.00,41.52],[23.60,41.38],[23.30,41.37],[22.95,41.34],
+    [22.65,41.35],[22.40,41.80],[22.36,42.32],[22.44,42.55],[22.55,42.90],[22.65,43.30],[22.40,43.60],
+    [22.45,43.80],[22.37,44.00]
+  ];
+
+  var API = "https://api.open-meteo.com/v1/forecast" +
+    "?latitude=" + CITIES.map(function (c) { return c.lat; }).join(",") +
+    "&longitude=" + CITIES.map(function (c) { return c.lon; }).join(",") +
+    "&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m" +
+    "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
+    "&timezone=Europe%2FSofia&forecast_days=3";
+
+  var CACHE_KEY = "vremeto-bg-v1";
+  var SEL_KEY = "vremeto-bg-city";
+  var REFRESH_MS = 15 * 60 * 1000;
+
+  var state = { rows: null, fetchedAt: 0, stale: false, selected: 0, q: "", sort: "az", loading: false };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {
+    stamp: $("stamp"), refresh: $("refresh"), notice: $("notice"), extremes: $("extremes"),
+    map: $("map"), detail: $("detail"), grid: $("grid"), q: $("q"), sort: $("sort"),
+    legbar: $("legbar"), legticks: $("legticks")
+  };
+
+  /* ---------- Помощни ---------- */
+  function store(op, key, val) {
+    try {
+      if (op === "get") return window.localStorage.getItem(key);
+      window.localStorage.setItem(key, val);
+    } catch (e) { /* няма достъп до хранилището */ }
+    return null;
+  }
+
+  var WMO = {
+    0: ["Ясно", "sun"], 1: ["Предимно ясно", "sun"], 2: ["Частично облачно", "partly"], 3: ["Облачно", "cloud"],
+    45: ["Мъгла", "fog"], 48: ["Мъгла с измръзване", "fog"],
+    51: ["Слаб ръмеж", "rain"], 53: ["Ръмеж", "rain"], 55: ["Силен ръмеж", "rain"],
+    56: ["Леден ръмеж", "rain"], 57: ["Силен леден ръмеж", "rain"],
+    61: ["Слаб дъжд", "rain"], 63: ["Дъжд", "rain"], 65: ["Силен дъжд", "rain"],
+    66: ["Леден дъжд", "rain"], 67: ["Силен леден дъжд", "rain"],
+    71: ["Слаб сняг", "snow"], 73: ["Сняг", "snow"], 75: ["Силен сняг", "snow"], 77: ["Снежни зърна", "snow"],
+    80: ["Слаби превалявания", "rain"], 81: ["Превалявания", "rain"], 82: ["Силни превалявания", "rain"],
+    85: ["Снежни превалявания", "snow"], 86: ["Силни снежни превалявания", "snow"],
+    95: ["Гръмотевична буря", "storm"], 96: ["Буря със слаба градушка", "storm"], 99: ["Буря с градушка", "storm"]
+  };
+  function wmo(code) { return WMO[code] || ["Няма данни", "cloud"]; }
+
+  var CLOUD = "M9 24h14a5 5 0 0 0 .6-9.96A7 7 0 0 0 10.2 13.5 5.3 5.3 0 0 0 9 24z";
+  function icon(kind) {
+    var sunRays = "";
+    var i, a, x1, y1, x2, y2;
+    for (i = 0; i < 8; i++) {
+      a = i * Math.PI / 4;
+      x1 = 16 + Math.cos(a) * 8.5; y1 = 16 + Math.sin(a) * 8.5;
+      x2 = 16 + Math.cos(a) * 11.5; y2 = 16 + Math.sin(a) * 11.5;
+      sunRays += '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
+    }
+    var body;
+    if (kind === "sun") {
+      body = '<g stroke="var(--sun)" stroke-width="2" stroke-linecap="round">' + sunRays + '</g><circle cx="16" cy="16" r="6" fill="var(--sun)"/>';
+    } else if (kind === "partly") {
+      body = '<circle cx="12" cy="11" r="5" fill="var(--sun)"/><path d="' + CLOUD + '" fill="var(--cloud)" transform="translate(2 2)"/>';
+    } else if (kind === "cloud") {
+      body = '<path d="' + CLOUD + '" fill="var(--cloud)"/>';
+    } else if (kind === "fog") {
+      body = '<path d="' + CLOUD + '" fill="var(--cloud)" opacity=".65" transform="translate(0 -4)"/>' +
+        '<g stroke="var(--cloud)" stroke-width="2" stroke-linecap="round"><line x1="8" y1="23" x2="24" y2="23"/><line x1="11" y1="27" x2="27" y2="27"/></g>';
+    } else if (kind === "rain") {
+      body = '<path d="' + CLOUD + '" fill="var(--cloud)" transform="translate(0 -4)"/>' +
+        '<g stroke="var(--rain)" stroke-width="2" stroke-linecap="round"><line x1="11" y1="23" x2="9.5" y2="27"/><line x1="16" y1="23" x2="14.5" y2="27"/><line x1="21" y1="23" x2="19.5" y2="27"/></g>';
+    } else if (kind === "snow") {
+      body = '<path d="' + CLOUD + '" fill="var(--cloud)" transform="translate(0 -4)"/>' +
+        '<g fill="var(--snow)"><circle cx="11" cy="24" r="1.7"/><circle cx="16" cy="27" r="1.7"/><circle cx="21" cy="24" r="1.7"/></g>';
+    } else {
+      body = '<path d="' + CLOUD + '" fill="var(--cloud)" transform="translate(0 -5)"/>' +
+        '<polygon points="17,18 12,26 16,26 14,31 21,22 17,22" fill="var(--sun)"/>';
+    }
+    return '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">' + body + '</svg>';
+  }
+
+  var STOPS = [
+    [-15, [59, 76, 192]], [0, [90, 169, 230]], [10, [125, 211, 168]], [18, [242, 209, 107]],
+    [26, [242, 140, 56]], [34, [217, 65, 43]], [40, [161, 22, 31]]
+  ];
+  function tempRgb(t) {
+    if (t <= STOPS[0][0]) return STOPS[0][1];
+    for (var i = 1; i < STOPS.length; i++) {
+      if (t <= STOPS[i][0]) {
+        var a = STOPS[i - 1], b = STOPS[i];
+        var f = (t - a[0]) / (b[0] - a[0]);
+        return [0, 1, 2].map(function (k) { return Math.round(a[1][k] + (b[1][k] - a[1][k]) * f); });
+      }
+    }
+    return STOPS[STOPS.length - 1][1];
+  }
+  function rgbCss(c) { return "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")"; }
+  function tempColor(t) { return rgbCss(tempRgb(t)); }
+  function textOn(t) {
+    var c = tempRgb(t);
+    var lum = (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+    return lum > 0.55 ? "#14212b" : "#ffffff";
+  }
+
+  function fmt(v, d) {
+    if (v == null) return "–";
+    var n = Number(v).toFixed(d || 0);
+    if (Number(n) === 0) n = (0).toFixed(d || 0);
+    return n.replace("-", "−");
+  }
+  function deg(v) { return v == null ? "–" : fmt(v) + "°"; }
+  var DIRS = ["С", "СИ", "И", "ЮИ", "Ю", "ЮЗ", "З", "СЗ"];
+  function windDir(d) { return d == null ? "" : DIRS[Math.round(d / 45) % 8]; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  /* ---------- Данни ---------- */
+  function parse(json) {
+    var list = Array.isArray(json) ? json : [json];
+    if (list.length !== CITIES.length) throw new Error("Неочакван брой градове");
+    return list.map(function (r) { return { cur: r.current, daily: r.daily }; });
+  }
+
+  function load(force) {
+    if (state.loading) return;
+    state.loading = true;
+    el.refresh.disabled = true;
+    fetch(API, { cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (json) {
+        state.rows = parse(json);
+        state.fetchedAt = Date.now();
+        state.stale = false;
+        store("set", CACHE_KEY, JSON.stringify({ t: state.fetchedAt, json: json }));
+        showNotice("");
+      })
+      .catch(function () {
+        if (!state.rows) {
+          var raw = store("get", CACHE_KEY);
+          if (raw) {
+            try {
+              var c = JSON.parse(raw);
+              state.rows = parse(c.json);
+              state.fetchedAt = c.t;
+            } catch (e) { state.rows = null; }
+          }
+        }
+        state.stale = true;
+        showNotice(state.rows
+          ? "Няма връзка с Open-Meteo. Показани са последните запазени данни."
+          : "Не успях да заредя данните. Провери интернет връзката и натисни „Обнови“. Ако отвориш файла от пощата или чат, запази го и го отвори в браузъра.");
+      })
+      .then(function () {
+        state.loading = false;
+        el.refresh.disabled = false;
+        render();
+      });
+  }
+
+  function showNotice(msg) {
+    el.notice.hidden = !msg;
+    el.notice.textContent = msg;
+  }
+
+  /* ---------- Рендиране ---------- */
+  function renderStamp() {
+    if (!state.rows) { el.stamp.textContent = state.loading ? "Зареждане…" : "Няма данни"; return; }
+    var t = state.rows[0].cur.time || "";
+    var hhmm = t.slice(11, 16);
+    el.stamp.innerHTML = (state.stale ? "Последно: " : "Обновено: ") + "<b>" + esc(hhmm || "–") + "</b> ч.";
+  }
+
+  function renderExtremes() {
+    if (!state.rows) {
+      el.extremes.innerHTML = ["Най-топло", "Най-студено", "Най-силен вятър", "Най-влажно"].map(function (k) {
+        return '<div class="ext"><div class="k">' + k + '</div><div class="v">–</div><div class="c">&nbsp;</div></div>';
+      }).join("");
+      return;
+    }
+    function best(fn, dirMax) {
+      var bi = 0;
+      state.rows.forEach(function (r, i) {
+        var a = fn(r), b = fn(state.rows[bi]);
+        if (a != null && (b == null || (dirMax ? a > b : a < b))) bi = i;
+      });
+      return bi;
+    }
+    var w = best(function (r) { return r.cur.temperature_2m; }, true);
+    var c = best(function (r) { return r.cur.temperature_2m; }, false);
+    var s = best(function (r) { return r.cur.wind_speed_10m; }, true);
+    var h = best(function (r) { return r.cur.relative_humidity_2m; }, true);
+    var items = [
+      ["Най-топло", deg(state.rows[w].cur.temperature_2m), CITIES[w].n],
+      ["Най-студено", deg(state.rows[c].cur.temperature_2m), CITIES[c].n],
+      ["Най-силен вятър", fmt(state.rows[s].cur.wind_speed_10m) + " км/ч", CITIES[s].n],
+      ["Най-влажно", fmt(state.rows[h].cur.relative_humidity_2m) + "%", CITIES[h].n]
+    ];
+    el.extremes.innerHTML = items.map(function (it) {
+      return '<div class="ext"><div class="k">' + it[0] + '</div><div class="v">' + it[1] + '</div><div class="c">' + it[2] + "</div></div>";
+    }).join("");
+  }
+
+  var KX = 0.735 * 200, KY = 200, LON0 = 22.2, LAT0 = 44.35;
+  function px(lon) { return (lon - LON0) * KX; }
+  function py(lat) { return (LAT0 - lat) * KY; }
+
+  function renderMap() {
+    var path = "M" + OUTLINE.map(function (p) { return px(p[0]).toFixed(1) + "," + py(p[1]).toFixed(1); }).join("L") + "Z";
+    var dots = CITIES.map(function (c, i) {
+      var r = state.rows ? state.rows[i].cur : null;
+      var t = r ? r.temperature_2m : null;
+      var x = px(c.lon), y = py(c.lat);
+      var fill = t == null ? "var(--map-edge)" : tempColor(t);
+      var fg = t == null ? "var(--ink)" : textOn(t);
+      var side = c.lbl || "b", lx = x, ly = y + 28, anchor = "middle";
+      if (side === "l") { lx = x - 22; ly = y; anchor = "end"; }
+      if (side === "r") { lx = x + 22; ly = y; anchor = "start"; }
+      if (side === "t") { ly = y - 24; }
+      return '<g class="dot' + (i === state.selected ? " sel" : "") + '" data-i="' + i + '" role="button" tabindex="0" aria-label="' + esc(c.n) + (t == null ? "" : ", " + fmt(t) + " градуса") + '">' +
+        '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="16" fill="' + fill + '"/>' +
+        '<text class="t" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" fill="' + fg + '">' + (t == null ? "–" : fmt(t)) + "</text>" +
+        '<text class="lbl" x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + anchor + '" dominant-baseline="central">' + esc(c.n) + "</text>" +
+        "</g>";
+    }).join("");
+    el.map.innerHTML = '<svg viewBox="0 0 970 650" role="group" aria-label="Карта на България с температури по областни центрове"><path class="land" d="' + path + '"/>' + dots + "</svg>";
+  }
+
+  function renderLegend() {
+    var lo = -15, hi = 40;
+    var parts = STOPS.map(function (s) { return rgbCss(s[1]) + " " + (((s[0] - lo) / (hi - lo)) * 100).toFixed(1) + "%"; });
+    el.legbar.style.background = "linear-gradient(90deg," + parts.join(",") + ")";
+    el.legticks.innerHTML = [-10, 0, 10, 20, 30, 40].map(function (v) {
+      return '<span style="left:' + (((v - lo) / (hi - lo)) * 100).toFixed(1) + '%">' + fmt(v) + "°</span>";
+    }).join("");
+  }
+
+  function dayName(dateStr, i) {
+    if (i === 0) return "Днес";
+    if (i === 1) return "Утре";
+    try { return new Date(dateStr + "T12:00:00").toLocaleDateString("bg-BG", { weekday: "long" }); } catch (e) { return dateStr; }
+  }
+
+  function renderDetail() {
+    var c = CITIES[state.selected];
+    if (!state.rows) {
+      el.detail.innerHTML = '<h2>Подробности</h2><p class="d-sub">' + (state.loading ? "Зареждам данните…" : "Няма данни за показване.") + "</p>";
+      return;
+    }
+    var r = state.rows[state.selected], cur = r.cur, d = r.daily;
+    var w = wmo(cur.weather_code);
+    var days = (d.time || []).map(function (day, i) {
+      var wd = wmo(d.weather_code[i]);
+      var pp = d.precipitation_probability_max ? d.precipitation_probability_max[i] : null;
+      return '<div class="day"><div class="dn">' + esc(dayName(day, i)) + "</div>" + icon(wd[1]) +
+        '<div class="rng">' + deg(d.temperature_2m_max[i]) + ' <span>' + deg(d.temperature_2m_min[i]) + "</span></div>" +
+        '<div class="pp">' + (pp == null ? "" : "дъжд " + fmt(pp) + "%") + "</div></div>";
+    }).join("");
+    el.detail.innerHTML =
+      '<div class="d-head"><div><div class="d-name">' + esc(c.n) + '</div>' +
+      '<div class="d-sub">' + esc(w[0]) + "</div></div></div>" +
+      '<div class="d-temp"><div class="big" style="color:var(--ink)">' + deg(cur.temperature_2m) + "</div>" + icon(w[1]) + "</div>" +
+      '<p class="d-feel">Усеща се като ' + deg(cur.apparent_temperature) + "</p>" +
+      '<dl class="facts">' +
+      "<div><dt>Вятър</dt><dd>" + fmt(cur.wind_speed_10m) + " км/ч " + windDir(cur.wind_direction_10m) + "</dd></div>" +
+      "<div><dt>Влажност</dt><dd>" + fmt(cur.relative_humidity_2m) + "%</dd></div>" +
+      "<div><dt>Налягане</dt><dd>" + fmt(cur.pressure_msl) + " hPa</dd></div>" +
+      "<div><dt>Валежи сега</dt><dd>" + fmt(cur.precipitation, 1) + " мм</dd></div>" +
+      "</dl>" +
+      '<div class="days">' + days + "</div>";
+  }
+
+  function sortedIndexes() {
+    var q = el.q.value.trim().toLocaleLowerCase("bg");
+    var idx = CITIES.map(function (c, i) { return i; }).filter(function (i) {
+      return !q || CITIES[i].n.toLocaleLowerCase("bg").indexOf(q) !== -1;
+    });
+    var t = function (i) { return state.rows ? state.rows[i].cur.temperature_2m : null; };
+    var wnd = function (i) { return state.rows ? state.rows[i].cur.wind_speed_10m : null; };
+    var s = el.sort.value;
+    idx.sort(function (a, b) {
+      if (s !== "az" && state.rows) {
+        var f = s === "wind" ? wnd : t;
+        var va = f(a), vb = f(b);
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        var diff = s === "cold" ? va - vb : vb - va;
+        if (diff) return diff;
+      }
+      return CITIES[a].n.localeCompare(CITIES[b].n, "bg");
+    });
+    return idx;
+  }
+
+  function renderGrid() {
+    var idx = sortedIndexes();
+    if (!idx.length) { el.grid.innerHTML = '<p class="empty">Няма град с такова име.</p>'; return; }
+    el.grid.innerHTML = idx.map(function (i) {
+      var c = CITIES[i], r = state.rows ? state.rows[i].cur : null;
+      var t = r ? r.temperature_2m : null;
+      var w = r ? wmo(r.weather_code) : ["Зареждане", "cloud"];
+      return '<button type="button" class="tile' + (r ? "" : " skeleton") + '" data-i="' + i + '" aria-pressed="' + (i === state.selected) + '">' +
+        '<span class="nm">' + esc(c.n) + "</span>" + icon(w[1]) +
+        '<span class="tp"><span class="sw" style="background:' + (t == null ? "var(--line)" : tempColor(t)) + '"></span>' + deg(t) + "</span>" +
+        '<span class="ds">' + esc(w[0]) + (r ? " · вятър " + fmt(r.wind_speed_10m) + " км/ч" : "") + "</span></button>";
+    }).join("");
+  }
+
+  function render() {
+    renderStamp();
+    renderExtremes();
+    renderMap();
+    renderDetail();
+    renderGrid();
+  }
+
+  /* ---------- Събития ---------- */
+  function select(i, scroll) {
+    if (isNaN(i) || i < 0 || i >= CITIES.length) return;
+    state.selected = i;
+    store("set", SEL_KEY, String(i));
+    render();
+    if (scroll && window.innerWidth <= 900) {
+      var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      el.detail.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" });
+    }
+  }
+
+  el.grid.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-i]");
+    if (b) select(parseInt(b.getAttribute("data-i"), 10), true);
+  });
+  el.map.addEventListener("click", function (e) {
+    var g = e.target.closest("[data-i]");
+    if (g) select(parseInt(g.getAttribute("data-i"), 10), false);
+  });
+  el.map.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var g = e.target.closest("[data-i]");
+    if (g) { e.preventDefault(); select(parseInt(g.getAttribute("data-i"), 10), false); }
+  });
+  el.q.addEventListener("input", renderGrid);
+  el.sort.addEventListener("change", renderGrid);
+  el.refresh.addEventListener("click", function () { load(true); });
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && Date.now() - state.fetchedAt > 10 * 60 * 1000) load(false);
+  });
+  setInterval(function () { if (!document.hidden) load(false); }, REFRESH_MS);
+
+  /* ---------- Старт ---------- */
+  var saved = parseInt(store("get", SEL_KEY), 10);
+  state.selected = isNaN(saved) || saved < 0 || saved >= CITIES.length ? CITIES.findIndex(function (c) { return c.n === "София"; }) : saved;
+  renderLegend();
+  render();
+  load(false);
+})();
+</script>
+</body>
+</html>
