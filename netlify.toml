@@ -1,0 +1,10 @@
+[build]
+  # Plain static site: no build step, serve files from the repository root.
+  publish = "."
+  functions = "netlify/functions"
+
+# The site's only page is vremeto-bg.html; serve it at the root URL.
+[[redirects]]
+  from = "/"
+  to = "/vremeto-bg.html"
+  status = 200
