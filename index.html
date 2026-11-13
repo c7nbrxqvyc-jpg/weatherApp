@@ -1,12 +1,6 @@
 <!doctype html>
 <html lang="bg">
 <head>
-  <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-NLQJFNJK"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Времето в България</title>
@@ -75,22 +69,23 @@
 * { box-sizing: border-box; }
 html { color-scheme: light; }
 body {
+  background-image: url("/jplenio-autumn-8688876.jpg");
   margin: 0;
-  background: var(--bg);
+
   color: var(--ink);
   font: 15px/1.5 var(--font-body);
   padding-block: 28px 48px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
-.shell { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+.shell { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
 button, input, select { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
-.eyebrow { margin: 0 0 6px; font-size: 12px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
-h1 { margin: 0; font: 700 clamp(26px, 4.6vw, 44px)/1.08 var(--font-display); letter-spacing: -.02em; text-wrap: balance; }
-.stamp { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+.eyebrow {background-color: white; margin: 0 0 6px; font-size: 12px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+h1 { background-color: white; margin: 0; font: 700 clamp(26px, 4.6vw, 44px)/1.08 var(--font-display); letter-spacing: -.02em; text-wrap: balance; }
+.stamp {background-color: white; display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
 .stamp b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
 .btn {
   border: 1px solid var(--line); background: var(--surface); border-radius: 8px;
@@ -101,7 +96,7 @@ h1 { margin: 0; font: 700 clamp(26px, 4.6vw, 44px)/1.08 var(--font-display); let
 
 .notice { margin: 0; padding: 10px 14px; border-radius: 8px; background: var(--warn-bg); color: var(--warn-ink); font-size: 14px; }
 
-.extremes { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); border-block: 1px solid var(--line); }
+.extremes {background-color: white; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); border-block: 1px solid var(--line); }
 .ext { padding: 16px 18px; min-width: 0; }
 .ext + .ext { border-left: 1px solid var(--line); }
 .ext .k { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
@@ -637,4 +632,5 @@ footer a { color: var(--accent); }
 })();
 </script>
 </body>
+
 </html>
